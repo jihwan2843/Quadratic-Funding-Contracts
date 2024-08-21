@@ -9,7 +9,13 @@ import {Clones} from "./dependencies/openzeppelin/contracts/Clones.sol";
 contract Factory {
     using Clones for address;
 
-    IGrantManager grantmanager;
+    event CreateGrant(
+        uint32 indexed _grantId,
+        address indexed cloneGrantAddr,
+        address indexed proposer
+    );
+
+    //IGrantManager grantmanager;
 
     // grant 컨트랙트 배포후 입력
     address immutable masterGrant;
@@ -20,24 +26,30 @@ contract Factory {
     // 그랜트 제안자가 생성한 그랜트를 grantId => grant 맵핑으로 저장
     mapping(uint256 => address) private grantidToGrant;
 
-    address[] grants;
+    // GrantId들을 배열로 저장
+    uint32[] private grantIds;
 
     constructor(address _addr) {
-        grantmanager = IGrantManager(_addr);
+        //grantmanager = IGrantManager(_addr);
+        masterGrant = _addr;
     }
 
     function createGrant(
         address _addr,
         string memory _title,
         string memory _description
-    ) public returns (address) {
+    ) public returns (uint32) {
+        // EOA가 Grant컨트랙트에 직접 접근하여 이 함수를 실행하지 못하도록 함
+        // EntryPoint를 통해 propose를 할 수 있음
+        //require(msg.sender.code.length != 0, "You are a EOA");
         require(_addr != address(0), "Your Address is 0x");
 
         address proposer = _addr;
 
+        // 프록시 패턴을 활용하여 Grant를 생성
         address cloneAddr = Clones.clone(masterGrant);
 
-        uint256 newGrantId = IGrant(cloneAddr).propose(
+        uint32 newGrantId = IGrant(cloneAddr).propose(
             proposer,
             _title,
             _description
@@ -52,11 +64,13 @@ contract Factory {
             "The Grant Address is 0x"
         );
 
-        grants.push(cloneAddr);
+        grantIds.push(newGrantId);
 
-        grantmanager.setGrantInfo(newGrantId);
+        emit CreateGrant(newGrantId, cloneAddr, proposer);
 
-        return cloneAddr;
+        //grantmanager.setGrantInfo(newGrantId);
+
+        return newGrantId;
     }
 
     function getGrantbyProsper(address _addr) public view returns (address) {
@@ -65,5 +79,9 @@ contract Factory {
 
     function getGrantbyGrantId(uint256 _grantId) public view returns (address) {
         return grantidToGrant[_grantId];
+    }
+
+    function getListOfGrantId() public view returns (uint32[] memory) {
+        return grantIds;
     }
 }

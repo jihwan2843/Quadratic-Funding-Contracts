@@ -10,5 +10,5 @@ interface IGrant {
         address _addr,
         string memory _title,
         string memory _description
-    ) external returns (uint256);
+    ) external returns (uint32);
 }
