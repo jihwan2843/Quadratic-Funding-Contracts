@@ -4,7 +4,7 @@ pragma solidity >=0.8.0 <0.9.0;
 import "./Grant.sol";
 import "./interfaces/IGrantManager.sol";
 import "./interfaces/IGrant.sol";
-import "@openzeppelin/contracts/proxy/Clones.sol";
+import {Clones} from "./dependencies/openzeppelin/contracts/Clones.sol";
 
 contract Factory {
     using Clones for address;
@@ -17,6 +17,7 @@ contract Factory {
     // 그랜트 제안자가 생성한 그랜트 주소를 저장
     mapping(address => address) private proposerToGrant;
 
+    // 그랜트 제안자가 생성한 그랜트를 grantId => grant 맵핑으로 저장
     mapping(uint256 => address) private grantidToGrant;
 
     address[] grants;
