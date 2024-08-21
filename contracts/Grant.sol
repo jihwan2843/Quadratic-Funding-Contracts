@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity >=0.8.0 <0.9.0;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
+import {Math} from "./dependencies/openzeppelin/contracts/Math.sol";
 
 contract Grant {
     using Math for uint256;
@@ -15,9 +15,6 @@ contract Grant {
     // 이 그랜트에 후원된 총 후원 금액
     uint256 private totalAmount;
 
-    // 이 그랜트에 후원한 총 후원자 수
-    //uint256 private totalSponsors;
-
     event GrantFunding(
         address indexed sponsor,
         uint256 indexed amount,
@@ -25,18 +22,12 @@ contract Grant {
     );
     event GrantPropose(
         address indexed proposer,
-        uint256 indexed grantId,
+        uint32 indexed grantId,
         uint256 indexed grantStart
     );
 
     modifier StatusChange() {
-        if (block.timestamp > grantDeadline()) {
-            proposalstatus = ProposalStatus.Distributed;
-        } else if (block.timestamp >= grantStart()) {
-            proposalstatus = ProposalStatus.Active;
-        } else {
-            proposalstatus = ProposalStatus.Pending;
-        }
+        proposalstatus = _currentStatus();
         _;
     }
 
@@ -44,7 +35,7 @@ contract Grant {
 
     struct Proposal {
         address owner;
-        uint256 grantId;
+        uint32 grantId;
         uint256 grantStart;
         uint grantDeadline;
     }
@@ -113,10 +104,13 @@ contract Grant {
         address _addr,
         string memory _title,
         string memory _description
-    ) public StatusChange returns (uint256) {
-        // 사용자 접근제어 만들기
+    ) public returns (uint32) {
+        // EOA가 Grant컨트랙트에 직접 접근하여 이 함수를 실행하지 못하도록 함
+        // EntryPoint를 통해 propose를 할 수 있음
+        //require(msg.sender.code.length != 0, "You are a EOA");
+        require(grantProposer() == address(0), "You already created the grant");
         address proposer = _addr;
-        uint256 grantId = hashGrant(proposer, _title, _description);
+        uint32 grantId = uint32(hashGrant(proposer, _title, _description));
         uint256 currentTime = block.timestamp;
 
         proposal.grantStart = currentTime + grantDelay();
@@ -134,6 +128,7 @@ contract Grant {
         address _addr,
         uint256 _amount
     ) public StatusChange returns (uint256) {
+        //require(msg.sender.code.length != 0, "You are a EOA");
         require(_amount > 0, "amount is zero");
         require(
             proposalstatus == ProposalStatus.Active,
@@ -145,7 +140,6 @@ contract Grant {
         // 처음 후원한 후원자
         if (amountPerSponsor[sponsor] == 0) {
             sponsors.push(sponsor);
-            //totalSponsors++;
         }
         amountPerSponsor[sponsor] += _amount;
         totalAmount += _amount;
@@ -156,24 +150,40 @@ contract Grant {
     }
 
     // 이 Grant의 현재 상태를 반환
-    function state() public view returns (string memory) {
-        if (proposalstatus == ProposalStatus.Active) {
+    function status() public view returns (string memory) {
+        ProposalStatus _proposalstatus = _currentStatus();
+        if (_proposalstatus == ProposalStatus.Active) {
             return "Active";
-        } else if (proposalstatus == ProposalStatus.Pending) {
+        } else if (_proposalstatus == ProposalStatus.Pending) {
             return "Pending";
-        } else if (proposalstatus == ProposalStatus.Distributed) {
+        } else if (_proposalstatus == ProposalStatus.Distributed) {
             return "Distributed";
         } else {
             return "Canceld";
         }
     }
 
-    // 후원이 시작되기전 그랜트를 취소하기
-    function cancel() public view returns (uint256) {
-        require(msg.sender == proposal.owner, "go back");
-        require(proposalstatus == ProposalStatus.Pending, "go back");
+    function _currentStatus() private view returns (ProposalStatus) {
+        if (block.timestamp > grantDeadline()) {
+            return ProposalStatus.Distributed;
+        } else if (block.timestamp >= grantStart()) {
+            return ProposalStatus.Active;
+        } else if (proposalstatus == ProposalStatus.Canceld) {
+            return ProposalStatus.Canceld;
+        } else {
+            return ProposalStatus.Pending;
+        }
+    }
 
-        proposalstatus == ProposalStatus.Canceld;
+    // 후원이 시작되기전 그랜트를 취소하기
+    function cancel() public returns (uint32) {
+        require(msg.sender == proposal.owner, "You are not the proposal'owner");
+        require(
+            proposalstatus == ProposalStatus.Pending,
+            "the proposal is activated, You can't cancel"
+        );
+
+        proposalstatus = ProposalStatus.Canceld;
         return proposal.grantId;
     }
 
