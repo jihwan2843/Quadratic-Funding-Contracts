@@ -31,20 +31,28 @@ contract Factory {
 
     constructor(address _addr) {
         //grantmanager = IGrantManager(_addr);
-        masterGrant = _addr;
+        masterGrant = address(_addr);
     }
 
     function createGrant(
         address _addr,
         string memory _title,
         string memory _description
-    ) public returns (uint32) {
+    ) public returns (address) {
         // EOA가 Grant컨트랙트에 직접 접근하여 이 함수를 실행하지 못하도록 함
         // EntryPoint를 통해 propose를 할 수 있음
-        //require(msg.sender.code.length != 0, "You are a EOA");
+        require(
+            msg.sender.code.length != 0,
+            "Direct access by EOA is not allowed"
+        );
         require(_addr != address(0), "Your Address is 0x");
 
         address proposer = _addr;
+
+        require(
+            proposerToGrant[proposer] == address(0),
+            "You have already created the grant"
+        );
 
         // 프록시 패턴을 활용하여 Grant를 생성
         address cloneAddr = Clones.clone(masterGrant);
@@ -70,7 +78,7 @@ contract Factory {
 
         //grantmanager.setGrantInfo(newGrantId);
 
-        return newGrantId;
+        return cloneAddr;
     }
 
     function getGrantbyProsper(address _addr) public view returns (address) {

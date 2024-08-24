@@ -32,7 +32,8 @@ contract GrantManager is Ownable {
         return factory.getListOfGrantId();
     }
 
-    function setmatchingDistribute() public onlyOwner returns (bool) {
+    function setmatchingDistribute(address _addr) public returns (bool) {
+        require(_addr == owner(), "You are not admin");
         require(totalMatchingPool > 0, "Not Set MtchingPool");
         setdistributionRate();
         uint length = grants.length;
@@ -63,13 +64,12 @@ contract GrantManager is Ownable {
             grant = IGrant(grantAddr);
             uint256 sqrtAmount = grant.calculateQuadraticFuding();
             sumOfSqrtValue[grants[i]] = sqrtAmount;
-            // grantInfo[grants[i]] = GrantDonation(0,0,sqrtAmount);
-
             sumOfAllSumOfSqrtValue += sqrtAmount;
         }
     }
 
-    function setMatchingPool(uint256 _amount) public onlyOwner {
+    function setMatchingPool(address _address, uint256 _amount) public {
+        require(_address == owner(), "You are not admin");
         totalMatchingPool = _amount;
     }
 

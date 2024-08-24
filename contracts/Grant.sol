@@ -6,6 +6,8 @@ import {Math} from "./dependencies/openzeppelin/contracts/Math.sol";
 contract Grant {
     using Math for uint256;
 
+    uint256 constant PRECISION = 1e18;
+
     // 각 후원자 주소별로 후원금액을 나타냄
     mapping(address => uint256) private amountPerSponsor;
 
@@ -107,8 +109,10 @@ contract Grant {
     ) public returns (uint32) {
         // EOA가 Grant컨트랙트에 직접 접근하여 이 함수를 실행하지 못하도록 함
         // EntryPoint를 통해 propose를 할 수 있음
-        //require(msg.sender.code.length != 0, "You are a EOA");
-        require(grantProposer() == address(0), "You already created the grant");
+        require(
+            msg.sender.code.length != 0,
+            "Direct access by EOA is not allowed"
+        );
         address proposer = _addr;
         uint32 grantId = uint32(hashGrant(proposer, _title, _description));
         uint256 currentTime = block.timestamp;
@@ -128,7 +132,10 @@ contract Grant {
         address _addr,
         uint256 _amount
     ) public StatusChange returns (uint256) {
-        //require(msg.sender.code.length != 0, "You are a EOA");
+        require(
+            msg.sender.code.length != 0,
+            "Direct access by EOA is not allowed"
+        );
         require(_amount > 0, "amount is zero");
         require(
             proposalstatus == ProposalStatus.Active,
@@ -193,12 +200,15 @@ contract Grant {
         uint256 sum = 0;
         uint256 length = sponsors.length;
         for (uint i = 0; i < length; i++) {
-            uint256 sqrtAmount = Math.sqrt(amountPerSponsor[sponsors[i]]);
+            uint256 sqrtAmount = Math.sqrt(
+                amountPerSponsor[sponsors[i]] * PRECISION
+            );
             sum += sqrtAmount;
         }
         (bool success, uint256 result) = Math.tryMul(sum, sum);
         require(success, "Overflowed");
 
+        result = result / PRECISION;
         return result;
     }
 }
