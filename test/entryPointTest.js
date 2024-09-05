@@ -181,6 +181,15 @@ describe("EntryPoint", function () {
 
       // 관리자가 매칭풀에 있는 자금을 분배
       await entryPoint.connect(admin).matchingDistribute();
+
+      // grant배열을 반환
+      const grants = await grantManager.getGrants();
+      console.log(grants);
+      for (let i = 0; i < grants.length; i++) {
+        const amount = await grantManager.getDonationAmount(grants[i]);
+        console.log(amount);
+      }
+      // 분배된 금액의 총합이 9999이다.
     });
   });
 });

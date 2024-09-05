@@ -12,11 +12,11 @@ contract GrantManager is Ownable {
     // 펀딩된 총 매칭 풀 금액
     uint256 private totalMatchingPool;
     // grantId별 제곱근들의 합
-    mapping(uint256 => uint256) private sumOfSqrtValue;
+    mapping(uint32 => uint256) private sumOfSqrtValue;
     // grantId별 분배 비율
-    mapping(uint256 => uint256) private distributionRate;
+    mapping(uint32 => uint256) private distributionRate;
     // grantId별 총 매칭 풀에서 그랜트에게 분배된 금액
-    mapping(uint256 => uint256) private donationAmount;
+    mapping(uint32 => uint256) private donationAmount;
 
     // 모든 그랜트들의 제곱근의 합들을 모두 더한 값
     uint256 sumOfAllSumOfSqrtValue;
@@ -26,8 +26,13 @@ contract GrantManager is Ownable {
         //grant = IGrant(_grantAddr);
     }
 
+    // grantId별 총 매칭 풀에서 그랜트에게 분배된 금액을 반환
+    function getDonationAmount(uint32 _grantId) public view returns(uint256){
+        return donationAmount[_grantId];
+    }
+
     // Grant배열들을 반환
-    function getGrants() private view returns (uint32[] memory) {
+    function getGrants() public view returns (uint32[] memory) {
         return factory.getListOfGrantId();
     }
 
