@@ -180,7 +180,7 @@ describe("EntryPoint", function () {
       console.log(a);
 
       // 관리자가 매칭풀에 있는 자금을 분배
-      //await entryPoint.connect(admin).matchingDistribute();
+      await entryPoint.connect(admin).matchingDistribute();
     });
   });
 });

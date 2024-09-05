@@ -17,8 +17,7 @@ contract GrantManager is Ownable {
     mapping(uint256 => uint256) private distributionRate;
     // grantId별 총 매칭 풀에서 그랜트에게 분배된 금액
     mapping(uint256 => uint256) private donationAmount;
-    // grant들을 배열로 저장
-    uint256[] grants;
+
     // 모든 그랜트들의 제곱근의 합들을 모두 더한 값
     uint256 sumOfAllSumOfSqrtValue;
 
@@ -36,10 +35,10 @@ contract GrantManager is Ownable {
         require(_addr == owner(), "You are not admin");
         require(totalMatchingPool > 0, "Not Set MtchingPool");
         setdistributionRate();
-        uint length = grants.length;
+        uint length = getGrants().length;
         for (uint i = 0; i < length; i++) {
-            donationAmount[grants[i]] =
-                (totalMatchingPool * distributionRate[grants[i]]) /
+            donationAmount[getGrants()[i]] =
+                (totalMatchingPool * distributionRate[getGrants()[i]]) /
                 10000;
         }
         // 정상적으로 배분이 됬는지 어떻게 확인하지?
@@ -48,11 +47,11 @@ contract GrantManager is Ownable {
 
     function setdistributionRate() private {
         setSumOfSqrtValue();
-        uint length = grants.length;
+        uint length = getGrants().length;
         for (uint i = 0; i < length; i++) {
-            uint rate = (sumOfSqrtValue[grants[i]] * 100 * 100) /
+            uint rate = (sumOfSqrtValue[getGrants()[i]] * 100 * 100) /
                 sumOfAllSumOfSqrtValue;
-            distributionRate[grants[i]] = rate;
+            distributionRate[getGrants()[i]] = rate;
         }
     }
 
@@ -60,10 +59,10 @@ contract GrantManager is Ownable {
     function setSumOfSqrtValue() private {
         uint length = getGrants().length;
         for (uint i = 0; i < length; i++) {
-            address grantAddr = factory.getGrantbyGrantId(grants[i]);
+            address grantAddr = factory.getGrantbyGrantId(getGrants()[i]);
             grant = IGrant(grantAddr);
             uint256 sqrtAmount = grant.calculateQuadraticFuding();
-            sumOfSqrtValue[grants[i]] = sqrtAmount;
+            sumOfSqrtValue[getGrants()[i]] = sqrtAmount;
             sumOfAllSumOfSqrtValue += sqrtAmount;
         }
     }
