@@ -131,7 +131,7 @@ contract Grant {
     function funding(
         address _addr,
         uint256 _amount
-    ) public StatusChange returns (uint256) {
+    ) public payable StatusChange returns (uint256) {
         require(
             msg.sender.code.length != 0,
             "Direct access by EOA is not allowed"
@@ -153,7 +153,7 @@ contract Grant {
 
         emit GrantFunding(sponsor, _amount, block.timestamp);
 
-        return _amount;
+        return address(this).balance;
     }
 
     // 이 Grant의 현재 상태를 반환
@@ -211,4 +211,6 @@ contract Grant {
         result = result / PRECISION;
         return result;
     }
+
+    receive() external payable {}
 }

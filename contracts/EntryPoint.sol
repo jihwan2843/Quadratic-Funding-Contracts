@@ -18,11 +18,17 @@ contract EntryPoint {
     }
 
     // 특정 그랜트에 후원하기. Grant.sol 함수를 호출하여 후원하기
-    function funding(address _addr, uint256 _amount) public returns (uint256) {
+    function funding(
+        address _addr,
+        uint256 _amount
+    ) public payable returns (uint256) {
         require(_addr != address(0), "Invalid Address");
         //       후원할 그랜트의 주소
         grant = IGrant(_addr);
-        uint256 fundingAmount = grant.funding(msg.sender, _amount);
+        uint256 fundingAmount = grant.funding{value: msg.value}(
+            msg.sender,
+            _amount
+        );
 
         return fundingAmount;
     }

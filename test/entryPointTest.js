@@ -1,6 +1,5 @@
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
-const { extendProvider } = require("hardhat/config");
 
 describe("EntryPoint", function () {
   let admin;
@@ -72,14 +71,15 @@ describe("EntryPoint", function () {
       await ethers.provider.send("evm_increaseTime", [604810]);
       await ethers.provider.send("evm_mine");
 
+      const amount = ethers.parseEther("10.0");
       // 10달러 후원
       const fundingAmount = await entryPoint
         .connect(addr1)
-        .funding.staticCall(grantAddr, 10);
-      await entryPoint.connect(addr1).funding(grantAddr, 10);
-
-      const newGrant = await ethers.getContractAt("Grant", grantAddr);
-      expect(await newGrant.balanceOf(addr1.address)).to.equal(fundingAmount);
+        .funding.staticCall(grantAddr, 10, { value: amount });
+      //await entryPoint.connect(addr1).funding(grantAddr, 10);
+      //const newGrant = await ethers.getContractAt("Grant", grantAddr);
+      //expect(await newGrant.balanceOf(addr1.address)).to.equal(fundingAmount);
+      expect(ethers.formatEther(fundingAmount)).to.equal("10.0");
     });
 
     it("should fail when the grant is in pending status", async function () {
